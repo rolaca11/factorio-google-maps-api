@@ -1,18 +1,36 @@
 package io.ropi.gmaps.api.image;
 
+import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.ropi.gmaps.api.map.Chunk;
 import io.ropi.gmaps.api.parse.Position;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Component;
 
+@Component
+@Slf4j
 public class ImageChunk {
 
-    public static BufferedImage imageChunk(Chunk chunk, float width, float height) {
+    private final ResourceLoader resourceLoader;
+    private final Map<String, Image> imageCache = new ConcurrentHashMap<>();
+
+    public ImageChunk(ResourceLoader resourceLoader) {
+        this.resourceLoader = resourceLoader;
+    }
+
+    public BufferedImage imageChunk(Chunk chunk, float width, float height) {
         BufferedImage bufferedImage = new BufferedImage(Math.round(width), Math.round(height), BufferedImage.TYPE_INT_ARGB);
         int chunkSize = (int)chunk.getTiles().keySet().parallelStream().map(Position::getX).distinct().count();
         float tileSize = (float)width / chunkSize;
@@ -25,8 +43,7 @@ public class ImageChunk {
                     int y = Math.round(entry.getKey().getY() * tileSize);
                     int size = (int) Math.ceil(tileSize);
 
-                    graphics.setColor(entry.getValue());
-                    graphics.fillRect(x, y, size, size);
+                    graphics.drawImage(entry.getValue(), x, y, size, size, null);
 
 
                 });
@@ -41,43 +58,28 @@ public class ImageChunk {
     }
 
     @NonNull
-    public static Color getColorOfTile(String name) {
-        switch (name) {
-            case "concrete":
-            case "refined-concrete":
-            case "refined-hazard-concrete-left":
-            case "refined-hazard-concrete-right":
-                return Color.GRAY;
-            case "deepwater":
-            case "water":
-                return Color.BLUE;
-            case "dirt-1":
-            case "dirt-2":
-            case "dirt-3":
-            case "dirt-4":
-            case "dirt-5":
-            case "dirt-6":
-            case "dirt-7":
-            case "dry-dirt":
-                return Color.getHSBColor(0.1f, 1.0f, 0.5f);
-            case "grass-1":
-            case "grass-2":
-            case "grass-3":
-            case "grass-4":
-                return Color.GREEN;
-            case "landfill":
-                return Color.BLACK;
-            case "red-desert-0":
-            case "red-desert-1":
-            case "red-desert-2":
-            case "red-desert-3":
-                return Color.RED;
-            case "sand-1":
-            case "sand-2":
-            case "sand-3":
-                return Color.ORANGE;
+    public Image getColorOfTile(String name) {
+        if(!imageCache.containsKey(name)) {
+            synchronized (imageCache) {
+                if (!imageCache.containsKey(name)) {
+                    Resource resource = resourceLoader.getResource("classpath:assets/terrain/" + name + ".png");
+
+                    Image image;
+                    try {
+                        image = ImageIO.read(resource.getInputStream()).getSubimage(0, 0, 32, 32);
+                    } catch (IOException e) {
+                        log.error("Could not find asset with name: {}", name);
+                        image = new BufferedImage(256, 256, BufferedImage.TYPE_INT_RGB);
+                    }
+
+                    imageCache.put(name, image);
+                    return image;
+                } else {
+                    return imageCache.get(name);
+                }
+            }
         }
 
-        return Color.PINK;
+        return imageCache.get(name);
     }
 }

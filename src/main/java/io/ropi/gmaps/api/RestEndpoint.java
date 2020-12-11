@@ -3,7 +3,6 @@ package io.ropi.gmaps.api;
 import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,10 +27,12 @@ public class RestEndpoint {
 
     private final ResourceLoader resourceLoader;
     private final FactorioMapSupplier factorioMapSupplier;
+    private final ImageChunk imageChunk;
 
-    public RestEndpoint(ResourceLoader resourceLoader, FactorioMapSupplier factorioMapSupplier) {
+    public RestEndpoint(ResourceLoader resourceLoader, FactorioMapSupplier factorioMapSupplier, ImageChunk imageChunk) {
         this.resourceLoader = resourceLoader;
         this.factorioMapSupplier = factorioMapSupplier;
+        this.imageChunk = imageChunk;
     }
 
     static int roundUpToNextPowerOfTwo(int num) {
@@ -76,12 +77,13 @@ public class RestEndpoint {
         float tileTopLeftX = tileTopLeft.getX() + (x * chunkRowCount);
 
         tileCoordinates.setTopLeft(tileTopLeft);
-        Position tileBottomRight = new Position(Math.round(tileTopLeft.getX() + chunkRowCount), Math.round(tileTopLeft.getY() + chunkRowCount));
-        tileCoordinates.setBottomRight(tileBottomRight);
 
         BufferedImage image = new BufferedImage(TILE_SIZE, TILE_SIZE, 2);
 
         Graphics graphics = image.getGraphics();
+        graphics.setColor(Color.BLACK);
+        graphics.fillRect(0, 0, TILE_SIZE, TILE_SIZE);
+
         factorioMap.getChunks().entrySet().parallelStream()
                 .map(entry -> Map.entry(new FloatPosition(entry.getKey().getX() - tileTopLeftX, entry.getKey().getY() - tileTopLeftY),
                         entry.getValue()))
@@ -94,7 +96,7 @@ public class RestEndpoint {
                     float chunkY = entry.getKey().getY();
 
                     graphics.drawImage(
-                            ImageChunk.imageChunk(entry.getValue(), chunkPixelSize, chunkPixelSize),
+                            imageChunk.imageChunk(entry.getValue(), chunkPixelSize, chunkPixelSize),
                             Math.round(chunkX * chunkPixelSize),
                             Math.round(chunkY * chunkPixelSize),
                             Math.round(chunkPixelSize),
@@ -102,13 +104,6 @@ public class RestEndpoint {
                             null
                     );
                 });
-
-        graphics.setColor(Color.BLACK);
-        graphics.drawLine(0, 0, 255, 255);
-        graphics.drawLine(255, 0, 0, 255);
-        graphics.drawRect(0, 0, 256, 256);
-
-        graphics.drawString(String.format("{%d, %d}", lng, lat), 10, 10);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", outputStream);

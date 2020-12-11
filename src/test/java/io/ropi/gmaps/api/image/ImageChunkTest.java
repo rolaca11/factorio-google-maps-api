@@ -1,5 +1,9 @@
 package io.ropi.gmaps.api.image;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +17,8 @@ import io.ropi.gmaps.api.map.ChunkCoordinates;
 import io.ropi.gmaps.api.parse.Position;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.core.io.FileUrlResource;
+import org.springframework.core.io.ResourceLoader;
 
 class ImageChunkTest {
 
@@ -62,7 +68,10 @@ class ImageChunkTest {
 
         chunk.setTiles(tiles);
 
-        ImageIO.write(ImageChunk.imageChunk(chunk, 256, 256), "png", new File("test.png"));
+        ResourceLoader resourceLoader = mock(ResourceLoader.class);
+        when(resourceLoader.getResource(any())).thenReturn(new FileUrlResource(""));
+        ImageChunk imageChunk = new ImageChunk(resourceLoader);
+        ImageIO.write(imageChunk.imageChunk(chunk, 256, 256), "png", new File("test.png"));
     }
 
     private String getRandomTile() {
