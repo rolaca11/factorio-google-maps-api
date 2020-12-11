@@ -2,6 +2,7 @@ package io.ropi.gmaps.api;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,14 +33,17 @@ public class GmapsApplication extends SpringApplication {
 
         return () -> {
             try {
-                if(reference.get() == null) {
-                    ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    Map<String, Chunk> chunkMap = mapper.readValue(mapFile, new TypeReference<>() {});
+                synchronized (reference) {
+                    if (reference.get() == null) {
+                        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                        List<Chunk> chunkMap = mapper.readValue(mapFile, new TypeReference<>() {
+                        });
 
-                    reference.set(new FactorioMap(chunkMap));
+                        reference.set(new FactorioMap(chunkMap));
+                    }
+
+                    return reference.get();
                 }
-
-                return reference.get();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

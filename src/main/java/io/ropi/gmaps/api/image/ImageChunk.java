@@ -3,7 +3,6 @@ package io.ropi.gmaps.api.image;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.util.Map;
 
 import io.ropi.gmaps.api.map.Chunk;
@@ -13,21 +12,23 @@ import org.springframework.lang.NonNull;
 
 public class ImageChunk {
 
-    public static BufferedImage imageChunk(Chunk chunk, int width, int height) {
-        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+    public static BufferedImage imageChunk(Chunk chunk, float width, float height) {
+        BufferedImage bufferedImage = new BufferedImage(Math.round(width), Math.round(height), BufferedImage.TYPE_INT_ARGB);
         int chunkSize = (int)chunk.getTiles().keySet().parallelStream().map(Position::getX).distinct().count();
-        int tileSize = width / chunkSize;
-
-        Graphics graphics1 = bufferedImage.getGraphics();
-        graphics1.setColor(Color.LIGHT_GRAY);
-        graphics1.fillRect(0, 0, width, height);
+        float tileSize = (float)width / chunkSize;
 
         chunk.getTiles().entrySet().parallelStream()
                 .map(entry -> Map.entry(entry.getKey(), getColorOfTile(entry.getValue())))
                 .forEach(entry -> {
                     Graphics graphics = bufferedImage.getGraphics();
                     graphics.setColor(entry.getValue());
-                    graphics.fillRect(entry.getKey().getX() * tileSize, entry.getKey().getY() * tileSize, tileSize, tileSize);
+                    graphics.fillRect(Math.round(entry.getKey().getX() * tileSize),
+                            Math.round(entry.getKey().getY() * tileSize), (int)Math.ceil(tileSize), (int)Math.ceil(tileSize));
+
+//                    if(chunk.getVisibleForces().isEmpty()) {
+//                        graphics.setColor(new Color(0, 0, 0, 0.2f));
+//                        graphics.fillRect(0, 0, Math.round(width), Math.round(height));
+//                    }
                 });
 
         return bufferedImage;

@@ -1,6 +1,7 @@
 package io.ropi.gmaps.api.map;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -9,8 +10,8 @@ import io.ropi.gmaps.api.parse.Position;
 public class FactorioMap {
     private final Map<Position, Chunk> chunks;
 
-    public FactorioMap(Map<String, io.ropi.gmaps.api.parse.Chunk> chunks) {
-        this.chunks = chunks.values().parallelStream()
+    public FactorioMap(List<io.ropi.gmaps.api.parse.Chunk> chunks) {
+        this.chunks = chunks.parallelStream()
                 .map(chunk -> {
                     Chunk result = new Chunk();
                     result.setChartedForces(chunk.getCharted().entrySet().stream()

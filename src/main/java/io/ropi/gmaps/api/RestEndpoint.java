@@ -34,6 +34,26 @@ public class RestEndpoint {
         this.factorioMapSupplier = factorioMapSupplier;
     }
 
+    static int roundUpToNextPowerOfTwo(int num) {
+        int mask = 1;
+        for(int i = 0; i < bitCount(num - 1); i++) {
+            mask = mask << 1;
+        }
+
+        return mask;
+    }
+
+    static int bitCount(int num) {
+        int count = 0;
+
+        while(num != 0) {
+            num = num >> 1;
+            count++;
+        }
+
+        return count;
+    }
+
     @GetMapping
     public ResponseEntity<byte[]> getMap(@RequestParam(value = "x", required = false) Integer lng,
                                          @RequestParam(value = "y", required = false) Integer lat,
@@ -43,49 +63,52 @@ public class RestEndpoint {
         int x = lng / zoom;
         int y = lat / zoom;
 
-        int mapSize = Math.max(factorioMap.getHeight(), factorioMap.getWidth()); // how many chunks the map consists of
+        int mapSize = roundUpToNextPowerOfTwo(Math.max(factorioMap.getHeight(), factorioMap.getWidth())); // how many chunks the map consists of
         int mapRowCount = (int) Math.pow(2, zoom); // how many pieces the map is put together from
 
-        int chunkPixelSize = (int)Math.floor((float)mapRowCount * TILE_SIZE / mapSize); // the resolution of one chunk
-        int chunkRowCount = mapSize / mapRowCount; // how many chunks fit in a row of the resulting image
+        float chunkPixelSize = (float) mapRowCount * TILE_SIZE / mapSize; // the resolution of one chunk
+        float chunkRowCount = (float)mapSize / mapRowCount; // how many chunks fit in a row of the resulting image
 
         ChunkCoordinates tileCoordinates = new ChunkCoordinates();
 
         Position tileTopLeft = factorioMap.getTopLeftMostPosition();
-        tileTopLeft.setY(tileTopLeft.getY() + (y * chunkRowCount));
-        tileTopLeft.setX(tileTopLeft.getX() + (x * chunkRowCount));
+        tileTopLeft.setY(tileTopLeft.getY() + Math.round(y * chunkRowCount));
+        tileTopLeft.setX(tileTopLeft.getX() + Math.round(x * chunkRowCount));
 
         tileCoordinates.setTopLeft(tileTopLeft);
-        Position tileBottomRight = new Position(tileTopLeft.getX() + chunkRowCount, tileTopLeft.getY() + chunkRowCount);
+        Position tileBottomRight = new Position(Math.round(tileTopLeft.getX() + chunkRowCount), Math.round(tileTopLeft.getY() + chunkRowCount));
         tileCoordinates.setBottomRight(tileBottomRight);
 
         BufferedImage image = new BufferedImage(TILE_SIZE, TILE_SIZE, 2);
 
+        Graphics graphics = image.getGraphics();
         factorioMap.getChunks().entrySet().parallelStream()
-                .filter(entry -> entry.getKey().getX() >= tileTopLeft.getX())
-                .filter(entry -> entry.getKey().getY() >= tileTopLeft.getY())
-                .filter(entry -> entry.getKey().getY() <= tileBottomRight.getY() + chunkRowCount)
-                .filter(entry -> entry.getKey().getX() <= tileBottomRight.getX() + chunkRowCount)
+                .map(entry -> Map.entry(new Position(entry.getKey().getX() - tileTopLeft.getX(), entry.getKey().getY() - tileTopLeft.getY()),
+                        entry.getValue()))
+                .filter(entry -> entry.getKey().getX() >= 0)
+                .filter(entry -> entry.getKey().getY() >= 0)
+                .filter(entry -> entry.getKey().getX() < chunkRowCount)
+                .filter(entry -> entry.getKey().getY() < chunkRowCount)
                 .forEach(entry -> {
-                    Graphics graphics = image.getGraphics();
-                    int chunkX = entry.getKey().getX() - tileTopLeft.getX();
-                    int chunkY = entry.getKey().getY() - tileTopLeft.getY();
+                    int chunkX = entry.getKey().getX();
+                    int chunkY = entry.getKey().getY();
 
-                    graphics.setColor(Color.ORANGE);
-                    graphics.fillRect(chunkX * chunkPixelSize,
-                            chunkY * chunkPixelSize,
-                            chunkPixelSize,
-                            chunkPixelSize);
-
-//                    graphics.drawImage(
-//                            ImageChunk.imageChunk(entry.getValue(), chunkPixelSize, chunkPixelSize),
-//                            chunkX * chunkPixelSize,
-//                            chunkY * chunkPixelSize,
-//                            chunkPixelSize,
-//                            chunkPixelSize,
-//                            null
-//                    );
+                    graphics.drawImage(
+                            ImageChunk.imageChunk(entry.getValue(), chunkPixelSize, chunkPixelSize),
+                            Math.round(chunkX * chunkPixelSize),
+                            Math.round(chunkY * chunkPixelSize),
+                            Math.round(chunkPixelSize),
+                            Math.round(chunkPixelSize),
+                            null
+                    );
                 });
+
+        graphics.setColor(Color.BLACK);
+        graphics.drawLine(0, 0, 255, 255);
+        graphics.drawLine(255, 0, 0, 255);
+        graphics.drawRect(0, 0, 256, 256);
+
+        graphics.drawString(String.format("{%d, %d}", lng, lat), 10, 10);
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", outputStream);

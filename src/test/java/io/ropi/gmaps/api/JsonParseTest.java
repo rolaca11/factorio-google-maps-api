@@ -5,8 +5,10 @@ import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
+import io.ropi.gmaps.api.image.FactorioMapSupplier;
 import io.ropi.gmaps.api.map.Chunk;
 import io.ropi.gmaps.api.map.FactorioMap;
 
@@ -27,15 +29,13 @@ class JsonParseTest {
     @Autowired
     private ResourceLoader resourceLoader;
 
+    @Autowired
+    private FactorioMapSupplier factorioMapSupplier;
+
     @Test
     void test() throws IOException {
-        Resource resource = resourceLoader.getResource("classpath:map.json");
-        ObjectMapper mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        Map<String, io.ropi.gmaps.api.parse.Chunk> chunkMap = mapper.readValue(resource.getFile(), new TypeReference<>() {});
 
-        FactorioMap subject = new FactorioMap(chunkMap);
-
-        log.warn("\n{}", subject.getChunks().values().stream()
+        log.warn("\n{}", factorioMapSupplier.get().getChunks().values().stream()
                 .map(Chunk::getTiles)
                 .map(Map::values)
                 .flatMap(Collection::parallelStream)
