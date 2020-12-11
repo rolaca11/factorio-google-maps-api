@@ -7,13 +7,16 @@ import java.util.stream.Collectors;
 
 import io.ropi.gmaps.api.parse.Position;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class FactorioMap {
     private final Map<Position, Chunk> chunks;
 
     public FactorioMap(List<io.ropi.gmaps.api.parse.Chunk> chunks) {
         this.chunks = chunks.parallelStream()
                 .map(chunk -> {
-                    Chunk result = new Chunk();
+                    Chunk result = Chunk.builder().build();
                     result.setChartedForces(chunk.getCharted().entrySet().stream()
                             .filter(Map.Entry::getValue)
                             .map(Map.Entry::getKey)
@@ -34,20 +37,19 @@ public class FactorioMap {
                                                     xEntry.getKey() - coordinates.getTopLeft().getX(),
                                                     yEntry.getKey() - coordinates.getTopLeft().getY()),
                                             yEntry.getValue())))
+                            .map(entry -> Map.entry(entry.getKey(), new Tile(entry.getValue())))
                             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
                     result.setCoordinates(coordinates);
 
                     return result;
-                })
-                .map(chunk -> {
+                }).map(chunk -> {
                     Position key = new Position();
                     key.setX(chunk.getCoordinates().getPosition().getX());
                     key.setY(chunk.getCoordinates().getPosition().getY());
 
                     return Map.entry(key, chunk);
-                })
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     FactorioMap(Map<Position, Chunk> chunks, boolean test) {

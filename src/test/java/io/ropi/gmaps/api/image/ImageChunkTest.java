@@ -51,7 +51,7 @@ class ImageChunkTest {
 
     @Test
     void imageChunk() throws IOException {
-        Chunk chunk = new Chunk();
+        Chunk chunk = Chunk.builder().build();
         ChunkCoordinates coordinates = new ChunkCoordinates();
         chunk.setCoordinates(coordinates);
 
@@ -66,7 +66,7 @@ class ImageChunkTest {
             }
         }
 
-        chunk.setTiles(tiles);
+//        chunk.setTiles(tiles);
 
         ResourceLoader resourceLoader = mock(ResourceLoader.class);
         when(resourceLoader.getResource(any())).thenReturn(new FileUrlResource(""));

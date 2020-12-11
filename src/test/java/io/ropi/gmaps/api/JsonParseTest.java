@@ -11,6 +11,7 @@ import java.util.Map;
 import io.ropi.gmaps.api.image.FactorioMapSupplier;
 import io.ropi.gmaps.api.map.Chunk;
 import io.ropi.gmaps.api.map.FactorioMap;
+import io.ropi.gmaps.api.map.Tile;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -39,6 +40,7 @@ class JsonParseTest {
                 .map(Chunk::getTiles)
                 .map(Map::values)
                 .flatMap(Collection::parallelStream)
+                .map(Tile::getName)
                 .distinct()
                 .sorted()
                 .reduce((left, right) -> left + "\n" + right).orElse("")

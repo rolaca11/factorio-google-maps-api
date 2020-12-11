@@ -32,7 +32,8 @@ public class ImageChunk {
     }
 
     public BufferedImage imageChunk(Chunk chunk, float width, float height) {
-        BufferedImage bufferedImage = new BufferedImage(Math.round(width), Math.round(height), BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bufferedImage = new BufferedImage(Math.round(width), Math.round(height),
+                BufferedImage.TYPE_INT_ARGB);
 
         int chunkSize = (int)chunk.getTiles().keySet().parallelStream().map(Position::getX).distinct().count();
         float tileSize = (float)width / chunkSize;
@@ -40,7 +41,7 @@ public class ImageChunk {
 
         Graphics graphics = bufferedImage.getGraphics();
         chunk.getTiles().entrySet().parallelStream()
-                .map(entry -> Map.entry(entry.getKey(), getColorOfTile(CacheKey.builder().name(entry.getValue()).size(size).build())))
+                .map(entry -> Map.entry(entry.getKey(), getColorOfTile(CacheKey.builder().name(entry.getValue().getName()).size(size).build())))
                 .forEach(entry -> {
                     int x = Math.round(entry.getKey().getX() * tileSize);
                     int y = Math.round(entry.getKey().getY() * tileSize);

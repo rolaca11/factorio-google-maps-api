@@ -11,10 +11,10 @@ import org.junit.jupiter.api.Test;
 class FactorioMapTest {
 
     private static final Map<Position, Chunk> CHUNKS = Map.ofEntries(
-            Map.entry(new Position(0, 3), new Chunk()),
-            Map.entry(new Position(-1, 2), new Chunk()),
-            Map.entry(new Position(5, -2), new Chunk()),
-            Map.entry(new Position(3, 1), new Chunk())
+            Map.entry(new Position(0, 3), Chunk.builder().build()),
+            Map.entry(new Position(-1, 2), Chunk.builder().build()),
+            Map.entry(new Position(5, -2), Chunk.builder().build()),
+            Map.entry(new Position(3, 1), Chunk.builder().build())
     );
 
     @Test
