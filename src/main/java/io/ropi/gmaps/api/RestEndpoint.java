@@ -72,8 +72,8 @@ public class RestEndpoint {
         ChunkCoordinates tileCoordinates = new ChunkCoordinates();
 
         Position tileTopLeft = factorioMap.getTopLeftMostPosition();
-        tileTopLeft.setY(tileTopLeft.getY() + Math.round(y * chunkRowCount));
-        tileTopLeft.setX(tileTopLeft.getX() + Math.round(x * chunkRowCount));
+        float tileTopLeftY = tileTopLeft.getY() + (y * chunkRowCount);
+        float tileTopLeftX = tileTopLeft.getX() + (x * chunkRowCount);
 
         tileCoordinates.setTopLeft(tileTopLeft);
         Position tileBottomRight = new Position(Math.round(tileTopLeft.getX() + chunkRowCount), Math.round(tileTopLeft.getY() + chunkRowCount));
@@ -83,15 +83,15 @@ public class RestEndpoint {
 
         Graphics graphics = image.getGraphics();
         factorioMap.getChunks().entrySet().parallelStream()
-                .map(entry -> Map.entry(new Position(entry.getKey().getX() - tileTopLeft.getX(), entry.getKey().getY() - tileTopLeft.getY()),
+                .map(entry -> Map.entry(new FloatPosition(entry.getKey().getX() - tileTopLeftX, entry.getKey().getY() - tileTopLeftY),
                         entry.getValue()))
-                .filter(entry -> entry.getKey().getX() >= 0)
-                .filter(entry -> entry.getKey().getY() >= 0)
-                .filter(entry -> entry.getKey().getX() < chunkRowCount)
-                .filter(entry -> entry.getKey().getY() < chunkRowCount)
+                .filter(entry -> entry.getKey().getX() >= -1)
+                .filter(entry -> entry.getKey().getY() >= -1)
+                .filter(entry -> entry.getKey().getX() <= chunkRowCount)
+                .filter(entry -> entry.getKey().getY() <= chunkRowCount)
                 .forEach(entry -> {
-                    int chunkX = entry.getKey().getX();
-                    int chunkY = entry.getKey().getY();
+                    float chunkX = entry.getKey().getX();
+                    float chunkY = entry.getKey().getY();
 
                     graphics.drawImage(
                             ImageChunk.imageChunk(entry.getValue(), chunkPixelSize, chunkPixelSize),

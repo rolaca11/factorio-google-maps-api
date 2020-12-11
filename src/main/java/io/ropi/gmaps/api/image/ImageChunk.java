@@ -21,15 +21,21 @@ public class ImageChunk {
                 .map(entry -> Map.entry(entry.getKey(), getColorOfTile(entry.getValue())))
                 .forEach(entry -> {
                     Graphics graphics = bufferedImage.getGraphics();
-                    graphics.setColor(entry.getValue());
-                    graphics.fillRect(Math.round(entry.getKey().getX() * tileSize),
-                            Math.round(entry.getKey().getY() * tileSize), (int)Math.ceil(tileSize), (int)Math.ceil(tileSize));
+                    int x = Math.round(entry.getKey().getX() * tileSize);
+                    int y = Math.round(entry.getKey().getY() * tileSize);
+                    int size = (int) Math.ceil(tileSize);
 
-//                    if(chunk.getVisibleForces().isEmpty()) {
-//                        graphics.setColor(new Color(0, 0, 0, 0.2f));
-//                        graphics.fillRect(0, 0, Math.round(width), Math.round(height));
-//                    }
+                    graphics.setColor(entry.getValue());
+                    graphics.fillRect(x, y, size, size);
+
+
                 });
+
+        if(chunk.getVisibleForces().isEmpty()) {
+            Graphics graphics = bufferedImage.getGraphics();
+            graphics.setColor(new Color(0, 0, 0, 0.5f));
+            graphics.fillRect(0, 0, (int)width, (int)height);
+        }
 
         return bufferedImage;
     }
